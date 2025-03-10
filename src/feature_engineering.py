@@ -1,5 +1,5 @@
-import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
+import pandas as pd # type: ignore
+from sklearn.preprocessing import OneHotEncoder # type: ignore
 
 def encode_features(df):
     numerical_features = df[["percent_identity", "coverage"]].copy()

@@ -1,6 +1,6 @@
 import glob
 import os
-import pandas as pd
+import pandas as pd         # type: ignore
 
 def load_tsv_files(dir):
     tsv_files = glob.glob(os.path.join(dir, "*.tsv"))

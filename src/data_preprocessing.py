@@ -22,7 +22,7 @@ def load_tsv_files(dir):
             raise ValueError("No TSV files were found.")
         
 def clean_data(df):
-    # renaming columnsfor easier encoding
+    # renaming columns for easier encoding
     # drop cols with missing critical data
 
     return df

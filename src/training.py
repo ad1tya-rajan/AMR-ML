@@ -1,7 +1,7 @@
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
+import pandas as pd                                     # type: ignore  
+from sklearn.model_selection import train_test_split    # type: ignore
+from sklearn.ensemble import RandomForestClassifier     # type: ignore
+from sklearn.metrics import classification_report       # type: ignore
 
 from data_preprocessing import load_tsv_files, clean_data
 from feature_engineering import encode_features, create_target

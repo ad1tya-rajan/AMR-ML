@@ -1,4 +1,4 @@
-import pandas as pd # type: ignore
+import pandas as pd 
 from sklearn.preprocessing import OneHotEncoder # type: ignore
 
 def encode_features(df):

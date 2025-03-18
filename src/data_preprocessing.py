@@ -1,34 +1,56 @@
 import glob
 import os
 import pandas as pd         # type: ignore
+from Bio import SeqIO       # type: ignore
 
-def load_tsv_files(dir):
-    tsv_files = glob.glob(os.path.join(dir, "*.tsv"))
-    dfs = []
+def parse_fasta(file, output_csv = None):
 
-    for file in tsv_files:
-        try:
-            df = pd.read_csv(file, sep = "\t")
-            sample_id = os.path.splitext(os.path.basename(file))[0]
-            df["sample_id"] = sample_id
+    records = []
 
-        except Exception as e:
-            print(f"Error processing {file}: ", e)
+    for record in SeqIO.parse(file, "fasta"):
 
-        if dfs:
-            master_df = pd.concat(dfs, ignore_index=True)
-            return master_df
-        else:
-            raise ValueError("No TSV files were found.")
+        # extract data from the header
+        header = record.description.lstrip(">")
+        fields = header.split("|")
+
+        if len(fields) >= 4:
+            accession = fields[1].strip()           # accession number
+            aro_id = fields[2].strip()              # ARO ID
+            gene_field = fields[3].strip()          # gene name and description
+
+            gene_name = gene_field.split()[0]
+            description = " ".join(gene_field.split()[1:]).strip() if len(gene_field.split()) > 1 else ""
         
-def clean_data(df):
-    # renaming columns for easier encoding
-    # drop cols with missing critical data
+        else:
+            accession = ""
+            aro_id = ""
+            gene_name = ""
+            description = header        # fallback to using the entire header as the gene name
 
-    return df
+        records.append({
+            "accession": accession,
+            "aro_id": aro_id,
+            "gene_name": gene_name,
+            "description": description,
+            "sequence": str(record.seq)
+        })
+    
+    df = pd.DataFrame(records)
+
+    if output_csv:
+        processed_dir = "/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/processed"
+        os.makedirs(processed_dir, exist_ok=True)           # create the directory if it doesn't exist
+        output_csv_path = os.path.join(processed_dir, output_csv)
+        df.to_csv(output_csv_path, index=False)
+        print(f"Data saved to {output_csv_path}")
+    
+    return df                                               # return a pandas dataframe
 
 if __name__ == "__main__":
-    dir = "database path"       # <--- change to tsv dir
-    master_df = load_tsv_files(dir)
-    master_df = clean_data(master_df)
-    print("Master dataframe head: \n", master_df.head())
+    
+    fasta_file = "/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/raw/test.fasta"
+    output_csv = "test.csv"
+    df = parse_fasta(fasta_file, output_csv=output_csv)
+    
+    print(df.head())
+    print("DF shape: ", df.shape)

@@ -9,7 +9,8 @@ def build_xgb_model(params=None):
             "learning_rate": 0.1,
             "num_class": 12,
             "max_depth": 6,
-            "tree_method": "gpu_hist"
+            "tree_method": "hist",
+            "device": "cuda"
         }
 
     model = XGBClassifier(**params)

@@ -8,7 +8,7 @@ import os
 
 from training import load_data, prepare_train_test_data, aro_id_to_gene_name
 
-def evaluate_model(model, X_test, y_test, le):
+def evaluate_model(model, X_test, y_test, le, aro_to_gene):
 
     # prediction
 
@@ -16,7 +16,7 @@ def evaluate_model(model, X_test, y_test, le):
     y_pred = np.argmax(y_prob, axis=1)
 
     predicted_aro = le.inverse_transform(y_pred)
-    predicted_gene = [aro_id_to_gene_name.get(aro, "Unknown") for aro in predicted_aro]
+    predicted_gene = [aro_to_gene.get(aro, "Unknown") for aro in predicted_aro]
 
     print("Predicted ARO IDs:\n", predicted_aro)
     print("Predicted Gene Names:\n", predicted_gene)
@@ -44,23 +44,19 @@ def evaluate_model(model, X_test, y_test, le):
 
 def main():
 
+    X_test = np.load("data/X_test.npy")
+    y_test = np.load("data/y_test.npy")
+    le = joblib.load("models/xgboost/label_encoder.pkl")
+    model = joblib.load("models/xgboost/xgb_model.pkl")
+
     fasta_file = "path/to/fasta/file"
     df, vocab = load_data(fasta_file)
 
     print("Data loaded and processed. DF shape: ", df.shape)
-
-    X_train, X_test, y_train, y_test, le = prepare_train_test_data(df)
     aro_to_gene = aro_id_to_gene_name(df)
 
-    model_file = "path/to/xgb_model.joblib"
-
-    if os.path.exists(model_file):
-        model = joblib.load(model_file)
-        print("Model loaded from", model_file)
-        evaluate_model(model, X_test, y_test, le)
-
-    else:
-        print("Model not found at", model_file)
+    print("Evaluating model...")
+    evaluate_model(model, X_test, y_test, le, aro_to_gene)
 
 if __name__ == "__main__":
     main()

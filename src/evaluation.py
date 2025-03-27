@@ -3,60 +3,69 @@ from sklearn.preprocessing import label_binarize
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
 import joblib
 import os
 
-from training import load_data, prepare_train_test_data, aro_id_to_gene_name
-
-def evaluate_model(model, X_test, y_test, le, aro_to_gene):
-
-    # prediction
-
+def evaluate_model(model, X_test, y_test, le):
+    # Predict probabilities and labels
     y_prob = model.predict_proba(X_test)
     y_pred = np.argmax(y_prob, axis=1)
 
-    predicted_aro = le.inverse_transform(y_pred)
-    predicted_gene = [aro_to_gene.get(aro, "Unknown") for aro in predicted_aro]
+    # Inverse transform to get class names
+    predicted_labels = le.inverse_transform(y_pred)
+    print("Predicted Drug Classes:\n", predicted_labels)
 
-    print("Predicted ARO IDs:\n", predicted_aro)
-    print("Predicted Gene Names:\n", predicted_gene)
+    # Evaluation Metrics
+    # print("Classification Report:\n", classification_report(
+    #     y_test, y_pred,
+    #     labels=np.arange(len(le.classes_)),
+    #     target_names=le.classes_,
+    #     zero_division=0
+    # ))
 
-    # evaluation
+    report_dict = classification_report(y_test, y_pred, 
+                                        labels=np.arange(len(le.classes_)),
+                                        target_names=le.classes_, 
+                                        zero_division=0, 
+                                        output_dict=True)
+    
+    filtered = {k: v for k, v in report_dict.items() if isinstance(v, dict) and v['support'] > 0}
+    print(pd.DataFrame(filtered).T)
 
-    report = classification_report(y_test, y_pred, target_names = le.classes_)      # skl classification report
-    print("Classification Report:\n", report)
+    print("F1 Score (macro):", f1_score(y_test, y_pred, average="macro"))
 
-    f1_macro = f1_score(y_test, y_pred, average="macro")                            # skl f1 score
-    print("F1 Score (macro):", f1_macro)
+    # y_test_binary = label_binarize(y_test, classes=np.arange(len(le.classes_)))
+    # try:
+    #     roc_auc = roc_auc_score(y_test_binary, y_prob, multi_class="ovr", average="macro")
+    #     print("ROC AUC Score:", roc_auc)
+    # except ValueError as e:
+    #     print("ROC AUC could not be computed:", e)
 
-    classes = np.arange(len(le.classes_))
-    y_test_binary = label_binarize(y_test, classes=classes)
-    roc_auc_score = roc_auc_score(y_test_binary, y_prob, multi_class="ovr", average="macro")
-    print("ROC AUC Score:", roc_auc_score)                                          # skl roc auc score
+    # Confusion matrix
+    # conf_matrix = confusion_matrix(y_test, y_pred)
+    # plt.figure(figsize=(12, 10))
+    # sns.heatmap(conf_matrix, annot=False, cmap="Blues", xticklabels=le.classes_, yticklabels=le.classes_)
+    # plt.xlabel("Predicted")
+    # plt.ylabel("True")
+    # plt.title("Confusion Matrix")
+    # plt.xticks(rotation=90)
+    # plt.tight_layout()
+    # os.makedirs("results", exist_ok=True)
+    # plt.savefig("results/confusion_matrix.png", dpi=300)
+    # plt.close()
+    # print("Confusion matrix saved to results/confusion_matrix.png")
 
-    conf_matrix = confusion_matrix(y_test, y_pred)
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(conf_matrix, annot=True, fmt="d", xticklabels=le.classes_, yticklabels=le.classes_, cmap="Blues")
-    plt.xlabel("Predicted")
-    plt.ylabel("True")
-    plt.title("Confusion Matrix")                                                    # confusion matrix
-    plt.show()
 
 def main():
+    # Load saved test data and model
+    X_test = np.load("/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/processed/X_test.npy")
+    y_test = np.load("/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/processed/y_test.npy")
+    le = joblib.load("/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/models/xgboost/label_encoder.joblib")
+    model = joblib.load("/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/models/xgboost/xgb_model.pkl")
 
-    X_test = np.load("data/X_test.npy")
-    y_test = np.load("data/y_test.npy")
-    le = joblib.load("models/xgboost/label_encoder.pkl")
-    model = joblib.load("models/xgboost/xgb_model.pkl")
-
-    fasta_file = "path/to/fasta/file"
-    df, vocab = load_data(fasta_file)
-
-    print("Data loaded and processed. DF shape: ", df.shape)
-    aro_to_gene = aro_id_to_gene_name(df)
-
-    print("Evaluating model...")
-    evaluate_model(model, X_test, y_test, le, aro_to_gene)
+    print("Evaluating model on held-out test set...")
+    evaluate_model(model, X_test, y_test, le)
 
 if __name__ == "__main__":
     main()

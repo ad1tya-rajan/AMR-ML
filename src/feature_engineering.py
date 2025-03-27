@@ -110,34 +110,34 @@ def tokenize_sequence(sequence, vocab):
 
     return tokens
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    # test the functions
+#     # test the functions
 
-    sequence = "MTEITAAMVKELRESTGAGMMDCKNALSETNGDFDKAXQLLRBZZGLGKAAKKADRLAAEG"
+#     sequence = "MTEITAAMVKELRESTGAGMMDCKNALSETNGDFDKAXQLLRBZZGLGKAAKKADRLAAEG"
 
-    print("Amino acid composition:")
-    print(amino_acid_comp(sequence))
-    print()
+#     print("Amino acid composition:")
+#     print(amino_acid_comp(sequence))
+#     print()
 
-    print("Composition vector:")
-    print(comp_vector(sequence))
-    print()
+#     print("Composition vector:")
+#     print(comp_vector(sequence))
+#     print()
 
-    print("3-mer composition:")
-    print(get_kmer_counts(sequence))
-    print()
+#     print("3-mer composition:")
+#     print(get_kmer_counts(sequence))
+#     print()
 
-    print("3-mer vocabulary:")
-    vocab = build_kmer_vocab([sequence], k = 3)
-    print(vocab)
-    print()
+#     print("3-mer vocabulary:")
+#     vocab = build_kmer_vocab([sequence], k = 3)
+#     print(vocab)
+#     print()
 
-    print("3-mer feature vector:")
-    print(kmer_feature_vector(sequence, k = 3, vocab = vocab))
-    print()
+#     print("3-mer feature vector:")
+#     print(kmer_feature_vector(sequence, k = 3, vocab = vocab))
+#     print()
 
-    print("Tokenized sequence:")
-    vocab = build_vocab()
-    print(tokenize_sequence(sequence, vocab))
-    print()
+#     print("Tokenized sequence:")
+#     vocab = build_vocab()
+#     print(tokenize_sequence(sequence, vocab))
+#     print()

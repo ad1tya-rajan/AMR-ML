@@ -3,36 +3,24 @@ import os
 import pandas as pd         # type: ignore
 from Bio import SeqIO       # type: ignore
 
-def parse_fasta(file, output_csv = None):
+def parse_fasta(fasta_file, output_csv = None):
 
     records = []
 
-    for record in SeqIO.parse(file, "fasta"):
-
-        # extract data from the header
-        header = record.description.lstrip(">")
-        fields = header.split("|")
-
-        if len(fields) >= 4:
-            accession = fields[1].strip()           # accession number
-            aro_id = fields[2].strip()              # ARO ID
-            gene_field = fields[3].strip()          # gene name and description
-
-            gene_name = gene_field.split()[0]
-            description = " ".join(gene_field.split()[1:]).strip() if len(gene_field.split()) > 1 else ""
-        
+    records = []
+    for record in SeqIO.parse(fasta_file, "fasta"):
+        header_parts = record.description.split("|")
+        if len(header_parts) >= 10:
+            drug_class = header_parts[9].strip()
+            gene_name = header_parts[4].strip()
         else:
-            accession = ""
-            aro_id = ""
-            gene_name = ""
-            description = header        # fallback to using the entire header as the gene name
+            drug_class = "Unknown"
+            gene_name = "Unknown"
 
         records.append({
-            "accession": accession,
-            "aro_id": aro_id,
-            "gene_name": gene_name,
-            "description": description,
-            "sequence": str(record.seq)
+            "sequence": str(record.seq),
+            "drug_class": drug_class,
+            "gene_name": gene_name
         })
     
     df = pd.DataFrame(records)
@@ -48,7 +36,7 @@ def parse_fasta(file, output_csv = None):
 
 if __name__ == "__main__":
     
-    fasta_file = "/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/raw/test.fasta"
+    fasta_file = "/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/raw/AMRProt.fa"      # or test.fa
     output_csv = "test.csv"
     df = parse_fasta(fasta_file, output_csv=output_csv)
     

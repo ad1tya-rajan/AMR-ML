@@ -1,2 +1,2 @@
 # AMR-ML
-Using Machine Learning techniques to examine Antimicrobial Resistance (AMR) in assmebled acterial genomes.
+Using Machine Learning techniques to examine Antimicrobial Resistance (AMR) in assmebled bacterial genomes.

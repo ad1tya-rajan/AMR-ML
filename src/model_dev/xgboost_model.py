@@ -28,6 +28,6 @@ def train_xgb_model(model, X_train, y_train):
         y=y_train
     )
 
-    sample_weights = class_weights[y_train]
-    model.fit(X_train, y_train, sample_weight=sample_weights)
+    # sample_weights = class_weights[y_train]
+    model.fit(X_train, y_train)
     return model

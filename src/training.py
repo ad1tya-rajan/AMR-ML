@@ -10,6 +10,7 @@ from model_dev.xgboost_model import build_xgb_model
 
 from data_preprocessing import parse_fasta
 from feature_engineering import kmer_feature_vector, comp_vector, build_kmer_vocab
+from collections import Counter
 
 def load_data(fasta_file, label_col = "drug_class"):
     df = parse_fasta(fasta_file)
@@ -22,24 +23,38 @@ def load_data(fasta_file, label_col = "drug_class"):
 
     # concatenate comp_vector and kmer_vector
     df["features"] = df.apply(lambda row: np.concatenate((row["comp_vector"], row["kmer_vector"])), axis = 1)
-    df["label"] = df[label_col]
-
+    df["label"] = df[label_col].fillna("Unknown")
+    # df = df[df["drug_class"].str.strip() != ""]
     return df, vocab
 
 def prepare_train_test_data(df, test_size = 0.2, random_state = 42):
+
+    label_counts = Counter(df["label"])
+    df = df[df["label"].map(label_counts) > 1]  # Filter out classes with only one sample
+    df = df[df["label"].str.strip() != ""]  # Remove empty labels
+
+    
     X = np.stack(df["features"].values)
     y_raw = df["label"].values
 
+    X_train, X_test, y_train_raw, y_test_raw = train_test_split(
+        X, y_raw, test_size=test_size, random_state=random_state, stratify=y_raw                # may use stratify argument if we filter very rare classes
+    )               
+
     le = LabelEncoder()
-    y = le.fit_transform(y_raw)
+    y_train = le.fit_transform(y_train_raw)
+    y_test = le.transform(y_test_raw)
 
-    # ---- debug ----
+    
 
-    print("Unique encoded labels:", np.unique(y))
+
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size, random_state = random_state)
+
+     # ---- debug ----
+    print("DEBUG: \n")
+    print("Unique encoded labels:", np.unique(y_train))
     print("Number of classes:", len(le.classes_))
     print("Label encoder classes:", le.classes_)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size, random_state = random_state)
 
     # For test data
     save_dir = os.path.join("..", "data", "processed")

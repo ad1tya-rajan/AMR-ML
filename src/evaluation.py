@@ -7,10 +7,17 @@ import pandas as pd
 import joblib
 import os
 
-def evaluate_model(model, X_test, y_test, le):
+def evaluate_model(model, X_test, y_test, le, output_csv=None):
     # Predict probabilities and labels
     y_prob = model.predict_proba(X_test)
     y_pred = np.argmax(y_prob, axis=1)
+
+    # Check all unique label indices in your test set
+    print("DEBUG: \n")
+    print("Unique y_test labels:", np.unique(y_test))
+    print("Unique y_pred labels:", np.unique(y_pred))
+    print("Label encoder classes:", le.classes_)
+    print("Number of classes:", len(le.classes_))
 
     # Inverse transform to get class names
     predicted_labels = le.inverse_transform(y_pred)
@@ -31,10 +38,22 @@ def evaluate_model(model, X_test, y_test, le):
                                         zero_division=0, 
                                         output_dict=True)
     
+    for label, scores in report_dict.items():
+        if isinstance(scores, dict) and label == "":
+            print(f"blank label: {scores}")
+    
     filtered = {k: v for k, v in report_dict.items() if isinstance(v, dict) and v['support'] > 0}
-    print(pd.DataFrame(filtered).T)
+    report_df = pd.DataFrame(filtered).T
+    report_df.index.name = "Drug Class"
+    print(report_df)
 
     print("F1 Score (macro):", f1_score(y_test, y_pred, average="macro"))
+
+    if output_csv:
+        # Save the classification report to a CSV file
+        report_df = pd.DataFrame(report_dict).T
+        report_df.to_csv(output_csv)
+        print(f"Classification report saved to {output_csv}")
 
     # y_test_binary = label_binarize(y_test, classes=np.arange(len(le.classes_)))
     # try:
@@ -66,7 +85,7 @@ def main():
     model = joblib.load("/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/models/xgboost/xgb_model.pkl")
 
     print("Evaluating model on held-out test set...")
-    evaluate_model(model, X_test, y_test, le)
+    evaluate_model(model, X_test, y_test, le, output_csv="/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/src/results/classification_report.csv")
 
 if __name__ == "__main__":
     main()

@@ -24,6 +24,7 @@ def evaluate_model(model, X_test, y_test, le):
     #     zero_division=0
     # ))
 
+    print("Classification Report (filtered zero support classes):")
     report_dict = classification_report(y_test, y_pred, 
                                         labels=np.arange(len(le.classes_)),
                                         target_names=le.classes_, 

@@ -4,6 +4,7 @@ import numpy as np
 import joblib                                  # type: ignore  
 from sklearn.model_selection import train_test_split    # type: ignore
 from sklearn.preprocessing import LabelEncoder
+from sklearn.utils import class_weight
 from models.xgboost import train_xgb_model
 from models.xgboost import build_xgb_model
 
@@ -82,6 +83,11 @@ def main():
     X_train, X_test, y_train, y_test, le = prepare_train_test_data(df)
 
     num_classes = len(le.classes_)
+    class_weights = class_weight.compute_class_weight(
+        class_weight='balanced',
+        classes=np.unique(y_train),
+        y=y_train
+    )
 
     params = {
         "n_estimators": 100,

@@ -1,6 +1,8 @@
 import xgboost as xgb
 from xgboost import XGBClassifier
 
+from training import class_weights
+
 def build_xgb_model(params=None):
     if params is None:
         params = {
@@ -17,5 +19,6 @@ def build_xgb_model(params=None):
     return model
     
 def train_xgb_model(model, X_train, y_train):
-    model.fit(X_train, y_train)
+    sample_weights = class_weights[y_train]
+    model.fit(X_train, y_train, sample_weight=sample_weights)
     return model

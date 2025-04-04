@@ -7,7 +7,6 @@ def parse_fasta(fasta_file, output_csv = None):
 
     records = []
 
-    records = []
     for record in SeqIO.parse(fasta_file, "fasta"):
         header_parts = record.description.split("|")
         if len(header_parts) >= 10:

@@ -42,17 +42,19 @@ def evaluate_model(model, X_test, y_test, le, output_csv=None):
         if isinstance(scores, dict) and label == "":
             print(f"blank label: {scores}")
     
-    filtered = {k: v for k, v in report_dict.items() if isinstance(v, dict) and v['support'] > 0}
-    report_df = pd.DataFrame(filtered).T
+    # filtered = {k: v for k, v in report_dict.items() if isinstance(v, dict) and v['support'] > 0}
+
+    report_df = pd.DataFrame(report_dict).T
     report_df.index.name = "Drug Class"
-    print(report_df)
+    filtered_report_df = report_df[report_df["support"] > 0]
+    print(filtered_report_df)
 
     print("F1 Score (macro):", f1_score(y_test, y_pred, average="macro"))
 
     if output_csv:
         # Save the classification report to a CSV file
-        report_df = pd.DataFrame(report_dict).T
-        report_df.to_csv(output_csv)
+        # report_df = pd.DataFrame(report_dict).T
+        filtered_report_df.to_csv(output_csv, sep="\t")
         print(f"Classification report saved to {output_csv}")
 
     # y_test_binary = label_binarize(y_test, classes=np.arange(len(le.classes_)))
@@ -85,7 +87,7 @@ def main():
     model = joblib.load("/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/models/xgboost/xgb_model.pkl")
 
     print("Evaluating model on held-out test set...")
-    evaluate_model(model, X_test, y_test, le, output_csv="/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/src/results/classification_report.csv")
+    evaluate_model(model, X_test, y_test, le, output_csv="/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/src/results/classification_report.tsv")
 
 if __name__ == "__main__":
     main()

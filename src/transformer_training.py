@@ -49,6 +49,9 @@ def train_transformer_model(df, le, label_col = "drug_class"):
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
+    torch.save(train_dataset, "../models/transformer/train_dataset.pt")
+    torch.save(val_dataset.indices, "../models/transformer/val_indices.pt")
+
     train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 

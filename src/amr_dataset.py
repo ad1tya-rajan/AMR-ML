@@ -24,5 +24,5 @@ class AMRDataset(Dataset):
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
-            "labels": torch.tensor(self.labels[idx], dtype=torch.long)
+            "label": torch.tensor(self.labels[idx], dtype=torch.long)
         }

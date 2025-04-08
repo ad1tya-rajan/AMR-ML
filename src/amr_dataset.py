@@ -3,11 +3,12 @@ from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 
 class AMRDataset(Dataset):
-    def __init__(self, sequences, labels, tokenizer_name="Rostlab/prot_bert", max_length=256):
+    def __init__(self, sequences, super_labels, sub_labels, tokenizer_name="Rostlab/prot_bert", max_length=256):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, do_lower_case=False)
         self.max_length = max_length
         self.sequences = sequences
-        self.labels = labels
+        self.super_labels = super_labels
+        self.sub_labels = sub_labels
 
     def __len__(self):
         return len(self.sequences)
@@ -24,5 +25,6 @@ class AMRDataset(Dataset):
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
-            "label": torch.tensor(self.labels[idx], dtype=torch.long)
+            "super_label": torch.tensor(self.super_labels[idx], dtype=torch.long),
+            "sub_label": torch.tensor(self.sub_labels[idx], dtype=torch.long),
         }

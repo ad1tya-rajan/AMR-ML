@@ -4,13 +4,17 @@ from transformers import AutoModel, AutoTokenizer
 
 class AMRClassifier(nn.Module):
 
-    def __init__(self, pretrained_model_name, num_classes):
+    def __init__(self, pretrained_model_name, num_super_classes, num_sub_classes):
 
         super(AMRClassifier, self).__init__()
 
         self.transformer = AutoModel.from_pretrained(pretrained_model_name)
         self.dropout = nn.Dropout(0.3)
-        self.classifier = nn.Linear(self.transformer.config.hidden_size, num_classes)
+
+        hidden_size = self.transformer.config.hidden_size
+
+        self.super_classifier = nn.Linear(hidden_size, num_super_classes)
+        self.sub_classifier = nn.Linear(hidden_size, num_sub_classes)
 
     def forward(self, input_ids, attention_mask):
 
@@ -19,8 +23,9 @@ class AMRClassifier(nn.Module):
         cls_output = outputs.last_hidden_state[:, 0, :]  # CLS token output
 
         x = self.dropout(cls_output)
-        logits = self.classifier(x)
-        return logits
+        super_logits = self.super_classifier(x)
+        sub_logits = self.sub_classifier(x)
+        return super_logits, sub_logits
 
 def main():
     # example usage

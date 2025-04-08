@@ -15,36 +15,44 @@ from data_preprocessing import parse_fasta
 from model_dev.transformer_model import AMRClassifier
 from amr_dataset import AMRDataset
 
-def load_data(fasta_file, label_col = "drug_class"):
+def load_data(fasta_file):
     df = parse_fasta(fasta_file)
 
-    df[label_col] = df[label_col].fillna("Unknown")
-    df = df[df[label_col].str.strip() != ""]
+    df = df[df["drug_class"].notna() & df["super_class"].notna()]
+    df = df[(df["drug_class"].str.strip() != "") & (df["super_class"].str.strip() != "")]
 
     return df
 
-def prepare_label_encoder(df, label_col = "drug_class"):
-    label_counts = Counter(df[label_col])
+def prepare_label_encoder(df):
+    # Filter rare sub-classes (you can also do this per super_class if needed)
+    sub_counts = Counter(df["drug_class"])
+    df = df[df["drug_class"].map(sub_counts) > 1]
 
-    df = df[df[label_col].map(label_counts) > 1]  # Filter out classes with only one sample
+    # Fit encoders
+    le_super = LabelEncoder()
+    le_sub = LabelEncoder()
+    df["super_label"] = le_super.fit_transform(df["super_class"])
+    df["sub_label"] = le_sub.fit_transform(df["drug_class"])
 
-    le = LabelEncoder()
-    df.loc[:, label_col] = le.fit_transform(df[label_col])
+    # Save encoders
+    model_dir = "../models/transformer"
+    os.makedirs(model_dir, exist_ok=True)
+    joblib.dump(le_super, os.path.join(model_dir, "label_encoder_super.joblib"))
+    joblib.dump(le_sub, os.path.join(model_dir, "label_encoder_sub.joblib"))
+    print("Saved super and sub-class label encoders.")
 
-    os.makedirs("../models/transformer", exist_ok=True)
-    joblib.dump(le, "../models/transformer/label_encoder.joblib")
-    print("Label encoder saved to ../models/transformer/label_encoder.joblib")
-    return df, le
+    return df, le_super, le_sub
 
 torch.cuda.empty_cache()
 gc.collect()
 
-def train_transformer_model(df, le, label_col = "drug_class"):
+def train_transformer_model(df, le_super, le_sub):
 
     sequences = [" ".join(list(seq)) for seq in df["sequence"].tolist()]
-    labels = df[label_col].tolist()
+    super_labels = df["super_label"].values
+    sub_labels = df["sub_label"].values
 
-    dataset = AMRDataset(sequences, labels)
+    dataset = AMRDataset(sequences, super_labels, sub_labels)
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
@@ -56,7 +64,7 @@ def train_transformer_model(df, le, label_col = "drug_class"):
     val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = AMRClassifier("Rostlab/prot_bert", num_classes=len(le.classes_)).to(device)
+    model = AMRClassifier("Rostlab/prot_bert", num_super_classes=len(le_super.classes_), num_sub_classes=len(le_sub.classes_)).to(device)
 
     optimizer = optim.AdamW(model.parameters(), lr=2e-5)
     criterion = nn.CrossEntropyLoss()
@@ -65,19 +73,23 @@ def train_transformer_model(df, le, label_col = "drug_class"):
 
     num_epochs = 3
     for epoch in range(num_epochs):
-        model.train()
 
+        model.train()
         running_loss = 0.0
 
         for batch in train_loader:
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
+            super_labels = batch["super_labels"].to(device)
+            sub_labels = batch["sub_labels"].to(device)
 
             optimizer.zero_grad()
 
-            outputs = model(input_ids, attention_mask)
-            loss = criterion(outputs, labels)
+            super_logits, sub_logits = model(input_ids, attention_mask)
+            loss_super = criterion(super_logits, super_labels)
+            loss_sub = criterion(sub_logits, sub_labels)
+            loss = loss_super + loss_sub
+
             loss.backward()
             optimizer.step()
 
@@ -98,9 +110,9 @@ def main():
     fasta_file = "/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/raw/AMRProt.fa"  # Path to your FASTA file
     label_col = "drug_class"  # Column name for labels
 
-    df = load_data(fasta_file, label_col)
-    df, le = prepare_label_encoder(df, label_col)
-    train_transformer_model(df, le, label_col)
+    df = load_data(fasta_file)
+    df, le_super, le_sub = prepare_label_encoder(df)
+    train_transformer_model(df, le_super, le_sub)
 
 if __name__ == "__main__":
     main()

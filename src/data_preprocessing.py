@@ -16,10 +16,13 @@ def parse_fasta(fasta_file, output_csv = None):
             drug_class = "Unknown"
             gene_name = "Unknown"
 
+        super_class = drug_class.split("/")[0].strip() if drug_class != "Unknown" else "Unknown"
+
         records.append({
             "sequence": str(record.seq),
             "drug_class": drug_class,
-            "gene_name": gene_name
+            "gene_name": gene_name,
+            "super_class": super_class,
         })
     
     df = pd.DataFrame(records)

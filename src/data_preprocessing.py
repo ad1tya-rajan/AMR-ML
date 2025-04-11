@@ -33,6 +33,34 @@ def parse_fasta(fasta_file, output_csv = None):
     
     return df                                               # return a pandas dataframe
 
+def parse_input_fasta(fasta_file, output_csv=None):
+
+    from Bio import SeqIO
+    import pandas as pd
+
+    records = []
+
+    for record in SeqIO.parse(fasta_file, "fasta"):
+        header_parts = record.description.split(maxsplit=1)
+        sequence_id = header_parts[0].strip()
+        gene_name = header_parts[1].strip() if len(header_parts) > 1 else "Unknown"
+
+        records.append({
+            "sequence_id": sequence_id,
+            "gene_name": gene_name,
+            "sequence": str(record.seq),
+        })
+
+    df = pd.DataFrame(records)
+
+    if output_csv:
+        output_path = os.path.join("/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/processed", output_csv)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        df.to_csv(output_path, index=False)
+        print(f"Saved parsed input FASTA to {output_path}")
+
+    return df
+
 if __name__ == "__main__":
     
     fasta_file = "/home/cvm-alamlab/Desktop/Aditya/AMR_Project/AMR-ML/data/raw/AMRProt.fa"      # or test.fa

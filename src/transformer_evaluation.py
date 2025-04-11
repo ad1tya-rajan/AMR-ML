@@ -48,7 +48,7 @@ def evaluate_model(model, dataloader, le, output_path=None):
         for batch in dataloader:
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
+            labels = batch["labels"].to(device)
 
             outputs = model(input_ids, attention_mask)
             preds = torch.argmax(outputs, dim=-1)

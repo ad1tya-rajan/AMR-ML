@@ -21,8 +21,12 @@ class AMRDataset(Dataset):
             return_tensors="pt"
         )
 
-        return {
+        item = {
             "input_ids": encoded["input_ids"].squeeze(0),
-            "attention_mask": encoded["attention_mask"].squeeze(0),
-            "label": torch.tensor(self.labels[idx], dtype=torch.long)
+            "attention_mask": encoded["attention_mask"].squeeze(0)
         }
+
+        if self.labels is not None:
+            item["labels"] = torch.tensor(self.labels[idx], dtype=torch.long)
+
+        return item
